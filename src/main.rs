@@ -148,9 +148,10 @@ impl LiveView for Counter {
             Msg::Decrement => {
                 if self.count > 0 {
                     self.count -= 1;
-                    self.shared_state.write().unwrap().global_count -= 1;
-                    self.tx.send(BroadcastPing::UpdatedCounter).unwrap();
                 }
+                
+                self.shared_state.write().unwrap().global_count -= 1;
+                self.tx.send(BroadcastPing::UpdatedCounter).unwrap();
             }
             Msg::Submit => {
                 self.msg = data
