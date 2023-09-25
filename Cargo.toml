@@ -1,5 +1,5 @@
 [package]
-name = "group-activity-decider-test"
+name = "what-to-do"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,10 +8,8 @@ axum = "0.6.18"
 shuttle-axum = "0.27.0"
 shuttle-runtime = "0.27.0"
 tokio = "1.28.2"
-dioxus = "0.4.0"
-dioxus-liveview = { version = "0.4.0", features = ["axum"] }
 pretty_env_logger = "0.5.0"
 axum-live-view = { git = "https://github.com/davidpdrsn/axum-live-view", features = ["precompiled-js"] }
 serde = { version = "1.0", features = ["derive"] }
-tower = { version = "0.4", features = ["util", "timeout", "load-shed", "limit"] }
-tower-http = { version = "0.2.0", features = ["add-extension", "auth", "compression-full", "trace"] }
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.2.0", features = ["add-extension"] }
