@@ -79,13 +79,14 @@ async fn root(
             <!DOCTYPE html>
             <html>
                 <head>
+                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css"/>
                 </head>
                 <body>
                     // Embed our live view into the HTML template. This will render the
                     // view and include the HTML in the response, leading to good SEO
                     // and fast first paint.
                     { embed_live_view.embed(counter) }
-
+                    
                     // Load the JavaScript. This will automatically initialize live view
                     // connections.
                     <script src="/assets/live-view.js"></script>
@@ -137,8 +138,6 @@ impl LiveView for Counter {
     // browser. This might be values of input fields or which key was pressed in
     // a keyboard event.
     fn update(mut self, msg: Msg, data: Option<EventData>) -> Updated<Self> {
-        dbg!(&data);
-
         match msg {
             Msg::Increment => {
                 self.count = self.count.saturating_add(1);
