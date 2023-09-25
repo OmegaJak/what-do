@@ -1,11 +1,10 @@
+use crate::room_state::RoomState;
 use std::{
     collections::HashMap,
     sync::{Arc, RwLock},
 };
 
-use rand::{distributions::Alphanumeric, Rng};
-
-use crate::room_state::RoomState;
+const ROOM_CODE_CHARSET: &str = "abcdefghijklmnopqrstuvwxyz";
 
 #[derive(Default)]
 pub struct ServerState {
@@ -46,10 +45,6 @@ impl ServerState {
     }
 
     fn random_room_code() -> String {
-        rand::thread_rng()
-            .sample_iter(Alphanumeric) //TODO: This includes numbers, limit to only letters?
-            .take(4)
-            .map(char::from)
-            .collect()
+        random_string::generate(4, ROOM_CODE_CHARSET)
     }
 }

@@ -50,8 +50,8 @@ impl AppPage for RoomChoicePage {
                         .unwrap()
                         .deserialize::<JoinRoomFormSubmit>()
                         .unwrap()
-                        .room_code;
-                    println!("Code: {}", code);
+                        .room_code
+                        .to_ascii_lowercase();
 
                     let state = server_shared_state.read().unwrap();
                     if let Some(room) = state.rooms.get(&code) {
@@ -71,7 +71,6 @@ impl AppPage for RoomChoicePage {
                         .deserialize::<CreateRoomFormSubmit>()
                         .unwrap()
                         .options_text;
-                    println!("Input: {}", options_text);
 
                     let mut state = server_shared_state.write().unwrap();
                     if let Ok((room_code, room)) = state.create_room(options_text) {
