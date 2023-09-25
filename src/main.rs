@@ -141,16 +141,19 @@ impl LiveView for Counter {
 
         match msg {
             Msg::Increment => {
-                self.count += 1;
-                self.shared_state.write().unwrap().global_count += 1;
+                self.count = self.count.saturating_add(1);
+                
+                let mut state = self.shared_state.write().unwrap();
+                state.global_count += state.global_count.saturating_add(1);
+
                 self.tx.send(BroadcastPing::UpdatedCounter).unwrap();
             }
             Msg::Decrement => {
-                if self.count > 0 {
-                    self.count -= 1;
-                }
-                
-                self.shared_state.write().unwrap().global_count -= 1;
+                self.count = self.count.saturating_sub(1);
+
+                let mut state = self.shared_state.write().unwrap();
+                state.global_count = state.global_count.saturating_sub(1);
+
                 self.tx.send(BroadcastPing::UpdatedCounter).unwrap();
             }
             Msg::Submit => {
