@@ -2502,6 +2502,7 @@ dependencies = [
  "axum",
  "axum-live-view",
  "pretty_env_logger",
+ "rand",
  "serde",
  "shuttle-axum",
  "shuttle-runtime",

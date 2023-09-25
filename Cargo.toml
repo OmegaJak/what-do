@@ -13,3 +13,4 @@ axum-live-view = { git = "https://github.com/davidpdrsn/axum-live-view", feature
 serde = { version = "1.0", features = ["derive"] }
 tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.2.0", features = ["add-extension"] }
+rand = "0.8.5"

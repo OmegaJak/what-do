@@ -1,23 +1,28 @@
 use axum::http::{HeaderMap, Uri};
 use axum_live_view::{
     event_data::EventData,
-    html,
     live_view::{Updated, ViewHandle},
     Html, LiveView,
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{ServerwideBroadcastSender, ServerwideSharedState, BroadcastMsg};
+use crate::{
+    pages::{
+        room_choice_page::{RoomChoiceMsg, RoomChoicePage},
+        AppPage,
+    },
+    BroadcastMsg, ServerwideBroadcastSender, ServerwideSharedState,
+};
 
 pub struct App {
     shared_state: ServerwideSharedState,
     tx: ServerwideBroadcastSender,
-    count: u64,
-    msg: String,
+    current_page: Box<dyn AppPage + Send + Sync>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum AppMsg {
+    RoomChoiceMsg(RoomChoiceMsg),
     Increment,
     Decrement,
     Submit,
@@ -34,8 +39,7 @@ impl App {
         Self {
             shared_state,
             tx,
-            count: 0,
-            msg: "".to_string(),
+            current_page: Box::new(RoomChoicePage::new()),
         }
     }
 }
@@ -55,68 +59,16 @@ impl LiveView for App {
     }
 
     fn update(mut self, msg: AppMsg, data: Option<EventData>) -> Updated<Self> {
-        match msg {
-            AppMsg::Increment => {
-                self.count = self.count.saturating_add(1);
-
-                let mut state = self.shared_state.write().unwrap();
-                state.global_count = state.global_count.saturating_add(1);
-
-                self.tx.send(BroadcastMsg::UpdatedCounter).unwrap();
-            }
-            AppMsg::Decrement => {
-                self.count = self.count.saturating_sub(1);
-
-                let mut state = self.shared_state.write().unwrap();
-                state.global_count = state.global_count.saturating_sub(1);
-
-                self.tx.send(BroadcastMsg::UpdatedCounter).unwrap();
-            }
-            AppMsg::Submit => {
-                self.msg = data
-                    .unwrap()
-                    .as_form()
-                    .unwrap()
-                    .deserialize::<FormSubmit>()
-                    .unwrap()
-                    .name;
-            }
-            AppMsg::Update => {}
+        let next_page = self
+            .current_page
+            .update(msg, data, &mut self.shared_state, &mut self.tx);
+        if let Some(page) = next_page {
+            self.current_page = page;
         }
-
         Updated::new(self)
     }
 
     fn render(&self) -> Html<Self::Message> {
-        let global_count = self.shared_state.read().unwrap().global_count;
-        html! {
-            <div>
-                "Counter value: "
-                { self.count }
-                { &self.msg }
-            </div>
-
-            <div>
-                "Global counter value: "
-                {global_count}
-            </div>
-
-            <div>
-                <button axm-click={ AppMsg::Increment }>"+"</button>
-                <button axm-click={ AppMsg::Decrement }>"-"</button>
-                <form axm-submit={ AppMsg::Submit }>
-                    <input
-                        type="text"
-                        name="name"
-                        placeholder="Your name"
-                    />
-
-                    <input
-                        type="submit"
-                        value="Send!"
-                    />
-                </form>
-            </div>
-        }
+        self.current_page.render()
     }
 }

@@ -1,16 +1,16 @@
 use app::App;
-use axum::{
-    response::IntoResponse,
-    routing::get,
-    Extension, Router,
-};
-use axum_live_view::{LiveViewUpgrade, html};
+use axum::{response::IntoResponse, routing::get, Extension, Router};
+use axum_live_view::{html, LiveViewUpgrade};
+use server_state::ServerState;
 use std::sync::{Arc, RwLock};
 use tokio::sync::broadcast;
 use tower::ServiceBuilder;
 use tower_http::add_extension::AddExtensionLayer;
 
 pub mod app;
+pub mod pages;
+pub mod room_state;
+pub mod server_state;
 
 pub type ServerwideSharedState = Arc<RwLock<ServerState>>;
 pub type ServerwideBroadcastSender = broadcast::Sender<BroadcastMsg>;
@@ -35,11 +35,6 @@ async fn axum() -> shuttle_axum::ShuttleAxum {
 #[derive(Clone, Copy, Debug)]
 pub enum BroadcastMsg {
     UpdatedCounter,
-}
-
-#[derive(Default)]
-pub struct ServerState {
-    pub global_count: u64,
 }
 
 async fn root(
