@@ -34,7 +34,7 @@ async fn axum() -> shuttle_axum::ShuttleAxum {
 
 #[derive(Clone, Copy, Debug)]
 pub enum BroadcastMsg {
-    UpdatedCounter,
+    UpdatedVetos,
 }
 
 async fn root(
@@ -50,8 +50,15 @@ async fn root(
             <html>
                 <head>
                     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css"/>
+                    <style>
+                        """body {
+                            font-family: monospace,system-ui;
+                        }
+                        """
+                    </style>
                 </head>
                 <body>
+                    <script src="https://dohliam.github.io/dropin-minimal-css/switcher.js" type="text/javascript"></script>
                     { embed_live_view.embed(counter) }
                     <script src="/assets/live-view.js"></script>
                 </body>

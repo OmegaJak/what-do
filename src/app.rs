@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     pages::{
         room_choice_page::{RoomChoiceMsg, RoomChoicePage},
+        veto_page::VetoMsg,
         AppPage,
     },
     BroadcastMsg, ServerwideBroadcastSender, ServerwideSharedState,
@@ -23,6 +24,7 @@ pub struct App {
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum AppMsg {
     RoomChoiceMsg(RoomChoiceMsg),
+    VetoMsg(VetoMsg),
     Increment,
     Decrement,
     Submit,
@@ -50,9 +52,17 @@ impl LiveView for App {
     fn mount(&mut self, _: Uri, _: &HeaderMap, handle: ViewHandle<Self::Message>) {
         let mut rx = self.tx.subscribe();
         tokio::spawn(async move {
-            while let Ok(BroadcastMsg::UpdatedCounter) = rx.recv().await {
-                if handle.send(AppMsg::Update).await.is_err() {
-                    break;
+            while let Ok(broadcast_msg) = rx.recv().await {
+                match broadcast_msg {
+                    BroadcastMsg::UpdatedVetos => {
+                        if handle
+                            .send(AppMsg::VetoMsg(VetoMsg::VetosUpdated))
+                            .await
+                            .is_err()
+                        {
+                            break;
+                        }
+                    }
                 }
             }
         });

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{app::AppMsg, pages::veto_page::VetoPage};
 
-use super::AppPage;
+use super::{deserialize_form, AppPage};
 
 pub struct RoomChoicePage {
     join_error_msg: Option<String>,
@@ -39,45 +39,31 @@ impl AppPage for RoomChoicePage {
         msg: AppMsg,
         data: Option<axum_live_view::event_data::EventData>,
         server_shared_state: &mut crate::ServerwideSharedState,
-        broadcaster: &mut crate::ServerwideBroadcastSender,
+        _broadcaster: &mut crate::ServerwideBroadcastSender,
     ) -> Option<Box<dyn AppPage + Send + Sync>> {
         if let AppMsg::RoomChoiceMsg(msg) = msg {
             match msg {
                 RoomChoiceMsg::JoinRoom => {
-                    let code = data
-                        .unwrap()
-                        .as_form()
-                        .unwrap()
-                        .deserialize::<JoinRoomFormSubmit>()
+                    let code = deserialize_form::<JoinRoomFormSubmit>(data)
                         .unwrap()
                         .room_code
                         .to_ascii_lowercase();
 
                     let state = server_shared_state.read().unwrap();
                     if let Some(room) = state.rooms.get(&code) {
-                        return Some(Box::new(VetoPage {
-                            room_code: code,
-                            room_state: room.clone(),
-                        }));
+                        return Some(Box::new(VetoPage::new(code, room.clone())));
                     } else {
                         self.join_error_msg = Some(format!("Room \"{}\" not found", code));
                     }
                 }
                 RoomChoiceMsg::CreateRoom => {
-                    let options_text = data
-                        .unwrap()
-                        .as_form()
-                        .unwrap()
-                        .deserialize::<CreateRoomFormSubmit>()
+                    let options_text = deserialize_form::<CreateRoomFormSubmit>(data)
                         .unwrap()
                         .options_text;
 
                     let mut state = server_shared_state.write().unwrap();
                     if let Ok((room_code, room)) = state.create_room(options_text) {
-                        return Some(Box::new(VetoPage {
-                            room_code,
-                            room_state: room.clone(),
-                        }));
+                        return Some(Box::new(VetoPage::new(room_code, room.clone())));
                     }
                 }
             }

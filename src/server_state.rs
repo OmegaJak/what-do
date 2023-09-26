@@ -20,10 +20,7 @@ impl ServerState {
         Ok((
             room_code.clone(),
             self.rooms.entry(room_code.clone()).or_insert_with(|| {
-                Arc::new(RwLock::new(RoomState {
-                    code: room_code,
-                    original_input_text,
-                }))
+                Arc::new(RwLock::new(RoomState::new(room_code, original_input_text)))
             }),
         ))
     }
