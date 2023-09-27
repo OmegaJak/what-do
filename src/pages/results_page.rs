@@ -1,5 +1,6 @@
 use axum_live_view::html;
 use itertools::Itertools;
+use ordinal::Ordinal;
 use serde::{Deserialize, Serialize};
 
 use crate::{app::AppMsg, room_state::RoomState};
@@ -40,7 +41,7 @@ impl AppPage for ResultsPage {
     fn render(&self) -> axum_live_view::Html<crate::app::AppMsg> {
         let room_state = self.room_state.read().unwrap();
         let scores = calculate_scores(&room_state.votes);
-        let highest_score = scores.first().map_or(0, |(_, score)| *score);
+        let highest_score = scores.first().map_or(0, |(_, score, _)| *score);
         html! {
             <div>
                 <h1>"Results"</h1>
@@ -48,11 +49,11 @@ impl AppPage for ResultsPage {
                 <h2>"Final Results"</h2>
                 <div>
                     <ol>
-                        for (option, score) in scores.iter() {
+                        for (option, score, ranks) in scores.iter() {
                             if *score == highest_score {
-                                <h3><li>{format!("{} - {}", option, score)}</li></h3>
+                                <h3><li>{get_summary_text(option, *score, ranks)}</li></h3>
                             } else {
-                                <li>{format!("{} - {}", option, score)}</li>
+                                <li>{get_summary_text(option, *score, ranks)}</li>
                             }
                         }
                     </ol>
@@ -77,24 +78,36 @@ impl AppPage for ResultsPage {
     }
 }
 
-fn calculate_scores(votes: &[Vec<String>]) -> Vec<(String, usize)> {
+fn get_summary_text(option: &str, score: usize, ranks: &[usize]) -> String {
+    format!("{} ({}) - {}", option, get_ranks_text(ranks), score)
+}
+
+fn get_ranks_text(ranks: &[usize]) -> String {
+    ranks.iter().map(|r| Ordinal(*r).to_string()).join(", ")
+}
+
+fn calculate_scores(votes: &[Vec<String>]) -> Vec<(String, usize, Vec<usize>)> {
     let longest = votes.iter().map(|v| v.len()).max().unwrap_or(0);
-    let mut scores: HashMap<String, usize> = HashMap::new();
+    let mut scores: HashMap<String, (usize, Vec<usize>)> = HashMap::new();
     for vote in votes {
         for (index, option) in vote.iter().enumerate() {
             let score = longest.checked_sub(index).unwrap();
+            let rank = index + 1;
             scores
                 .entry(option.clone())
-                .and_modify(|s| *s = *s + score)
-                .or_insert(score);
+                .and_modify(|(total, ranks)| {
+                    *total = *total + score;
+                    ranks.push(rank);
+                })
+                .or_insert((score, vec![rank]));
         }
     }
 
     scores
-        .iter()
-        .sorted_by_key(|(option, _)| option.to_owned())
-        .sorted_by_key(|(_, score)| *score)
+        .into_iter()
+        .sorted_by_key(|(option, _)| option.clone())
+        .sorted_by_key(|(_, (score, _))| *score)
         .rev()
-        .map(|(option, score)| (option.to_string(), *score))
+        .map(|(option, (score, ranks))| (option, score, ranks.into_iter().sorted().collect()))
         .collect()
 }
