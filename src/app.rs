@@ -89,13 +89,19 @@ impl LiveView for App {
     }
 
     fn update(mut self, msg: AppMsg, data: Option<EventData>) -> Updated<Self> {
-        let next_page = self
-            .current_page
-            .update(msg, data, &mut self.shared_state, &mut self.tx);
+        let (next_page, js_commands) =
+            self.current_page
+                .update(msg, data, &mut self.shared_state, &mut self.tx);
         if let Some(page) = next_page {
             self.current_page = page;
         }
-        Updated::new(self)
+
+        let mut updated = Updated::new(self);
+        if let Some(commands) = js_commands {
+            updated = updated.with_all(commands);
+        }
+
+        updated
     }
 
     fn render(&self) -> Html<Self::Message> {

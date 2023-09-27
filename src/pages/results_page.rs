@@ -28,14 +28,17 @@ impl AppPage for ResultsPage {
         _data: Option<axum_live_view::event_data::EventData>,
         _server_shared_state: &mut crate::ServerwideSharedState,
         _broadcaster: &mut crate::ServerwideBroadcastSender,
-    ) -> Option<Box<dyn AppPage + Send + Sync>> {
+    ) -> (
+        Option<Box<dyn AppPage + Send + Sync>>,
+        Option<Vec<axum_live_view::js_command::JsCommand>>,
+    ) {
         if let AppMsg::ResultsMsg(msg) = msg {
             match msg {
                 ResultsMsg::ResultsUpdated => (), // re-render
             }
         }
 
-        None
+        (None, None)
     }
 
     fn render(&self) -> axum_live_view::Html<crate::app::AppMsg> {

@@ -13,7 +13,10 @@ pub trait AppPage {
         data: Option<EventData>,
         server_shared_state: &mut ServerwideSharedState,
         broadcaster: &mut ServerwideBroadcastSender,
-    ) -> Option<Box<dyn AppPage + Send + Sync>>;
+    ) -> (
+        Option<Box<dyn AppPage + Send + Sync>>,
+        Option<Vec<axum_live_view::js_command::JsCommand>>,
+    );
     fn render(&self) -> Html<AppMsg>;
 }
 

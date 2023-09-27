@@ -47,7 +47,10 @@ impl AppPage for RankingPage {
         data: Option<axum_live_view::event_data::EventData>,
         _server_shared_state: &mut ServerwideSharedState,
         broadcaster: &mut ServerwideBroadcastSender,
-    ) -> Option<Box<dyn AppPage + Send + Sync>> {
+    ) -> (
+        Option<Box<dyn AppPage + Send + Sync>>,
+        Option<Vec<axum_live_view::js_command::JsCommand>>,
+    ) {
         if let AppMsg::RankingMsg(msg) = msg {
             match msg {
                 RankingMsg::SubmitRanking => {
@@ -59,15 +62,15 @@ impl AppPage for RankingPage {
                         .unwrap()
                         .contribute_votes(ranked_options);
                     broadcaster.send(BroadcastMsg::UpdatedVotes).unwrap();
-                    return self.get_results_page();
+                    return (self.get_results_page(), None);
                 }
                 RankingMsg::JustViewResults => {
-                    return self.get_results_page();
+                    return (self.get_results_page(), None);
                 }
             }
         }
 
-        None
+        (None, None)
     }
 
     fn render(&self) -> axum_live_view::Html<crate::app::AppMsg> {

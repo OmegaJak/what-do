@@ -1,6 +1,6 @@
 use super::{deserialize_form, ranking_page::RankingPage, AppPage};
 use crate::{app::AppMsg, room_state::RoomState, BroadcastMsg};
-use axum_live_view::html;
+use axum_live_view::{html, js_command::JsCommand};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 
@@ -46,7 +46,10 @@ impl AppPage for VetoPage {
         data: Option<axum_live_view::event_data::EventData>,
         _server_shared_state: &mut crate::ServerwideSharedState,
         broadcaster: &mut crate::ServerwideBroadcastSender,
-    ) -> Option<Box<dyn AppPage + Send + Sync>> {
+    ) -> (
+        Option<Box<dyn AppPage + Send + Sync>>,
+        Option<Vec<axum_live_view::js_command::JsCommand>>,
+    ) {
         if let AppMsg::VetoMsg(msg) = msg {
             match msg {
                 VetoMsg::VetoOption(option_to_veto) => {
@@ -64,19 +67,25 @@ impl AppPage for VetoPage {
                         .option;
                     self.room_state.write().unwrap().add_option(option);
                     broadcaster.send(BroadcastMsg::UpdatedVetos).unwrap();
+                    return (
+                        None,
+                        Some(vec![axum_live_view::js_command::clear_value(
+                            "#newOptionInput",
+                        )]),
+                    );
                 }
                 VetoMsg::FinishVetoing => {
                     self.room_state.write().unwrap().finish_vetoing();
                     broadcaster.send(BroadcastMsg::FinishedVetoing).unwrap();
-                    return self.get_ranking_page();
+                    return (self.get_ranking_page(), None);
                 }
                 VetoMsg::OtherUserFinishedVetoing => {
-                    return self.get_ranking_page();
+                    return (self.get_ranking_page(), None);
                 }
             }
         }
 
-        None
+        (None, None)
     }
 
     fn render(&self) -> axum_live_view::Html<crate::app::AppMsg> {
@@ -107,6 +116,7 @@ impl AppPage for VetoPage {
                     <form axm-submit={ AppMsg::VetoMsg(VetoMsg::AddOption) }>
                         <input
                             type="text"
+                            id="newOptionInput"
                             name="option"
                             placeholder="New option"
                         />

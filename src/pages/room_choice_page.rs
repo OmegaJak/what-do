@@ -40,7 +40,10 @@ impl AppPage for RoomChoicePage {
         data: Option<axum_live_view::event_data::EventData>,
         server_shared_state: &mut crate::ServerwideSharedState,
         _broadcaster: &mut crate::ServerwideBroadcastSender,
-    ) -> Option<Box<dyn AppPage + Send + Sync>> {
+    ) -> (
+        Option<Box<dyn AppPage + Send + Sync>>,
+        Option<Vec<axum_live_view::js_command::JsCommand>>,
+    ) {
         if let AppMsg::RoomChoiceMsg(msg) = msg {
             match msg {
                 RoomChoiceMsg::JoinRoom => {
@@ -53,10 +56,10 @@ impl AppPage for RoomChoicePage {
                     if let Some(room) = state.rooms.get(&code) {
                         return match room.read().unwrap().voting_stage() {
                             VotingStage::Vetoing => {
-                                Some(Box::new(VetoPage::new(code, room.clone())))
+                                (Some(Box::new(VetoPage::new(code, room.clone()))), None)
                             }
                             VotingStage::Ranking => {
-                                Some(Box::new(RankingPage::new(code, room.clone())))
+                                (Some(Box::new(RankingPage::new(code, room.clone()))), None)
                             }
                         };
                     } else {
@@ -70,13 +73,13 @@ impl AppPage for RoomChoicePage {
 
                     let mut state = server_shared_state.write().unwrap();
                     if let Ok((room_code, room)) = state.create_room(options_text) {
-                        return Some(Box::new(VetoPage::new(room_code, room.clone())));
+                        return (Some(Box::new(VetoPage::new(room_code, room.clone()))), None);
                     }
                 }
             }
         }
 
-        None
+        (None, None)
     }
 
     fn render(&self) -> axum_live_view::Html<AppMsg> {
