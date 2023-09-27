@@ -20,11 +20,19 @@ impl RankingPage {
             room_state,
         }
     }
+
+    fn get_results_page(&mut self) -> Option<Box<dyn AppPage + Send + Sync>> {
+        Some(Box::new(ResultsPage {
+            room_code: self.room_code.clone(),
+            room_state: self.room_state.clone(),
+        }))
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum RankingMsg {
     SubmitRanking,
+    JustViewResults,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -51,10 +59,10 @@ impl AppPage for RankingPage {
                         .unwrap()
                         .contribute_votes(ranked_options);
                     broadcaster.send(BroadcastMsg::UpdatedVotes).unwrap();
-                    return Some(Box::new(ResultsPage {
-                        room_code: self.room_code.clone(),
-                        room_state: self.room_state.clone(),
-                    }));
+                    return self.get_results_page();
+                }
+                RankingMsg::JustViewResults => {
+                    return self.get_results_page();
                 }
             }
         }
@@ -84,6 +92,8 @@ impl AppPage for RankingPage {
 
                         <input type="submit" value="Submit Ranking"/>
                     </form>
+
+                    <button axm-click={AppMsg::RankingMsg(RankingMsg::JustViewResults)}>"View Results w/o Voting"</button>
                 </div>
             </div>
         }
