@@ -40,6 +40,12 @@ impl RoomState {
         }
     }
 
+    pub fn add_option(&mut self, option: String) {
+        if valid_option(&option) && !self.options.iter().any(|o| o.text == option) {
+            self.options.push(Option::new(option));
+        }
+    }
+
     pub fn contribute_votes(&mut self, votes_text: String) {
         let votes = if !votes_text.is_empty() {
             parse_votes(votes_text)
@@ -87,7 +93,11 @@ fn parse_options(options_text: String) -> Vec<Option> {
     options_text
         .split(SPLIT_PATTERN)
         .unique()
-        .filter(|s| !s.is_empty())
+        .filter(|s| valid_option(s))
         .map(|s| Option::new(s.to_string()))
         .collect()
+}
+
+fn valid_option(option: &str) -> bool {
+    !option.is_empty()
 }

@@ -1,4 +1,4 @@
-use super::{ranking_page::RankingPage, AppPage};
+use super::{deserialize_form, ranking_page::RankingPage, AppPage};
 use crate::{app::AppMsg, room_state::RoomState, BroadcastMsg};
 use axum_live_view::html;
 use serde::{Deserialize, Serialize};
@@ -31,27 +31,38 @@ pub enum VetoMsg {
     ResetAllVetos,
     FinishVetoing,
     OtherUserFinishedVetoing,
+    AddOption,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AddOptionFormSubmit {
+    option: String,
 }
 
 impl AppPage for VetoPage {
     fn update(
         &mut self,
         msg: crate::app::AppMsg,
-        _data: Option<axum_live_view::event_data::EventData>,
+        data: Option<axum_live_view::event_data::EventData>,
         _server_shared_state: &mut crate::ServerwideSharedState,
         broadcaster: &mut crate::ServerwideBroadcastSender,
     ) -> Option<Box<dyn AppPage + Send + Sync>> {
         if let AppMsg::VetoMsg(msg) = msg {
             match msg {
                 VetoMsg::VetoOption(option_to_veto) => {
-                    let mut room_state = self.room_state.write().unwrap();
-                    room_state.veto_all(&option_to_veto);
+                    self.room_state.write().unwrap().veto_all(&option_to_veto);
                     broadcaster.send(BroadcastMsg::UpdatedVetos).unwrap();
                 }
                 VetoMsg::VetosUpdated => (),
                 VetoMsg::ResetAllVetos => {
-                    let mut room_state = self.room_state.write().unwrap();
-                    room_state.reset_all_vetos();
+                    self.room_state.write().unwrap().reset_all_vetos();
+                    broadcaster.send(BroadcastMsg::UpdatedVetos).unwrap();
+                }
+                VetoMsg::AddOption => {
+                    let option = deserialize_form::<AddOptionFormSubmit>(data)
+                        .unwrap()
+                        .option;
+                    self.room_state.write().unwrap().add_option(option);
                     broadcaster.send(BroadcastMsg::UpdatedVetos).unwrap();
                 }
                 VetoMsg::FinishVetoing => {
@@ -77,7 +88,7 @@ impl AppPage for VetoPage {
             <div>
                 <h1>"It's veto time, baby!"</h1>
                 <h3>{format!("Room: {}", self.room_code)}</h3>
-                <p>"Any voter can veto any number of options. When the veto phase is finished, all voters proceed to the ranking phase together and can no longer veto."</p>
+                <p>"Any voter can veto any number of options. When the veto phase is finished, all voters proceed to the ranking phase together and can no longer veto. Voters can also add new options here, because why not."</p>
                 <h4>"Options"</h4>
                 <div>
                     <ol>
@@ -92,6 +103,16 @@ impl AppPage for VetoPage {
                             </li>
                         }
                     </ol>
+
+                    <form axm-submit={ AppMsg::VetoMsg(VetoMsg::AddOption) }>
+                        <input
+                            type="text"
+                            name="option"
+                            placeholder="New option"
+                        />
+
+                        <input type="submit" value="Add Option"/>
+                    </form>
 
                     // This button seemingly has to be beneath the options, otherwise, the options don't get rendered...
                     <button style="font-size:0.75rem;" axm-click={AppMsg::VetoMsg(VetoMsg::ResetAllVetos)}>"Reset all vetos"</button>
