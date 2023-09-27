@@ -66,7 +66,7 @@ impl AppPage for RankingPage {
         let room_state = self.room_state.read().unwrap();
         html! {
             <div>
-                <h2>"Now, rank!"</h2>
+                <h1>"Now, rank!"</h1>
                 <h3>{format!("Room: {}", self.room_code)}</h3>
                 <div>
                     <ol id="sortableList">

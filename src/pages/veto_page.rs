@@ -75,7 +75,7 @@ impl AppPage for VetoPage {
         let room_state = self.room_state.read().unwrap();
         html! {
             <div>
-                <h2>"It's veto time, baby!"</h2>
+                <h1>"It's veto time, baby!"</h1>
                 <h3>{format!("Room: {}", self.room_code)}</h3>
                 <h4>"Options"</h4>
                 <div>
