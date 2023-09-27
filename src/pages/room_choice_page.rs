@@ -1,9 +1,9 @@
 use axum_live_view::html;
 use serde::{Deserialize, Serialize};
 
-use crate::{app::AppMsg, pages::veto_page::VetoPage};
+use crate::{app::AppMsg, pages::veto_page::VetoPage, room_state::VotingStage};
 
-use super::{deserialize_form, AppPage};
+use super::{deserialize_form, ranking_page::RankingPage, AppPage};
 
 pub struct RoomChoicePage {
     join_error_msg: Option<String>,
@@ -51,7 +51,14 @@ impl AppPage for RoomChoicePage {
 
                     let state = server_shared_state.read().unwrap();
                     if let Some(room) = state.rooms.get(&code) {
-                        return Some(Box::new(VetoPage::new(code, room.clone())));
+                        return match room.read().unwrap().voting_stage() {
+                            VotingStage::Vetoing => {
+                                Some(Box::new(VetoPage::new(code, room.clone())))
+                            }
+                            VotingStage::Ranking => {
+                                Some(Box::new(RankingPage::new(code, room.clone())))
+                            }
+                        };
                     } else {
                         self.join_error_msg = Some(format!("Room \"{}\" not found", code));
                     }

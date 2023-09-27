@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     pages::{
+        ranking_page::RankingMsg,
+        results_page::ResultsMsg,
         room_choice_page::{RoomChoiceMsg, RoomChoicePage},
         veto_page::VetoMsg,
         AppPage,
@@ -25,8 +27,8 @@ pub struct App {
 pub enum AppMsg {
     RoomChoiceMsg(RoomChoiceMsg),
     VetoMsg(VetoMsg),
-    Increment,
-    Decrement,
+    RankingMsg(RankingMsg),
+    ResultsMsg(ResultsMsg),
     Submit,
     Update,
 }
@@ -57,6 +59,24 @@ impl LiveView for App {
                     BroadcastMsg::UpdatedVetos => {
                         if handle
                             .send(AppMsg::VetoMsg(VetoMsg::VetosUpdated))
+                            .await
+                            .is_err()
+                        {
+                            break;
+                        }
+                    }
+                    BroadcastMsg::FinishedVetoing => {
+                        if handle
+                            .send(AppMsg::VetoMsg(VetoMsg::OtherUserFinishedVetoing))
+                            .await
+                            .is_err()
+                        {
+                            break;
+                        }
+                    }
+                    BroadcastMsg::UpdatedVotes => {
+                        if handle
+                            .send(AppMsg::ResultsMsg(ResultsMsg::ResultsUpdated))
                             .await
                             .is_err()
                         {

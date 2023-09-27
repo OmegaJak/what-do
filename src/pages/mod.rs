@@ -1,6 +1,8 @@
 use crate::{app::AppMsg, ServerwideBroadcastSender, ServerwideSharedState};
 use axum_live_view::{event_data::EventData, Html};
 
+pub mod ranking_page;
+pub mod results_page;
 pub mod room_choice_page;
 pub mod veto_page;
 

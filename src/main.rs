@@ -35,6 +35,8 @@ async fn axum() -> shuttle_axum::ShuttleAxum {
 #[derive(Clone, Copy, Debug)]
 pub enum BroadcastMsg {
     UpdatedVetos,
+    FinishedVetoing,
+    UpdatedVotes,
 }
 
 async fn root(
@@ -59,6 +61,10 @@ async fn root(
                 </head>
                 <body>
                     <script src="https://dohliam.github.io/dropin-minimal-css/switcher.js" type="text/javascript"></script>
+                    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+                    <script type="text/javascript">
+                    {include_str!("../assets/main.js")}
+                    </script>
                     { embed_live_view.embed(counter) }
                     <script src="/assets/live-view.js"></script>
                 </body>

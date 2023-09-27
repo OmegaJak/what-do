@@ -1,4 +1,4 @@
-use super::AppPage;
+use super::{ranking_page::RankingPage, AppPage};
 use crate::{app::AppMsg, room_state::RoomState, BroadcastMsg};
 use axum_live_view::html;
 use serde::{Deserialize, Serialize};
@@ -15,6 +15,13 @@ impl VetoPage {
             room_state,
         }
     }
+
+    fn get_ranking_page(&mut self) -> Option<Box<dyn AppPage + Send + Sync>> {
+        Some(Box::new(RankingPage::new(
+            self.room_code.clone(),
+            self.room_state.clone(),
+        )))
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -22,11 +29,8 @@ pub enum VetoMsg {
     VetoOption(String),
     VetosUpdated,
     ResetAllVetos,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct VetoOptionFormSubmit {
-    option: String,
+    FinishVetoing,
+    OtherUserFinishedVetoing,
 }
 
 impl AppPage for VetoPage {
@@ -49,6 +53,14 @@ impl AppPage for VetoPage {
                     let mut room_state = self.room_state.write().unwrap();
                     room_state.reset_all_vetos();
                     broadcaster.send(BroadcastMsg::UpdatedVetos).unwrap();
+                }
+                VetoMsg::FinishVetoing => {
+                    self.room_state.write().unwrap().finish_vetoing();
+                    broadcaster.send(BroadcastMsg::FinishedVetoing).unwrap();
+                    return self.get_ranking_page();
+                }
+                VetoMsg::OtherUserFinishedVetoing => {
+                    return self.get_ranking_page();
                 }
             }
         }
@@ -82,6 +94,8 @@ impl AppPage for VetoPage {
 
                     // This button seemingly has to be beneath the options, otherwise, the options don't get rendered...
                     <button axm-click={AppMsg::VetoMsg(VetoMsg::ResetAllVetos)}>"Reset all vetos"</button>
+
+                    <button axm-click={AppMsg::VetoMsg(VetoMsg::FinishVetoing)}>"Finish Vetoing"</button>
                 </div>
             </div>
         }
