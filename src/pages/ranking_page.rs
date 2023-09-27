@@ -76,6 +76,7 @@ impl AppPage for RankingPage {
             <div>
                 <h1>"Now, rank!"</h1>
                 <h3>{format!("Room: {}", self.room_code)}</h3>
+                <button axm-click={AppMsg::RankingMsg(RankingMsg::JustViewResults)}>"View Results w/o Voting"</button>
                 <div>
                     <ol id="sortableList">
                         for option in room_state.options.iter().filter(|o| !o.vetoed) {
@@ -92,8 +93,6 @@ impl AppPage for RankingPage {
 
                         <input type="submit" value="Submit Ranking"/>
                     </form>
-
-                    <button axm-click={AppMsg::RankingMsg(RankingMsg::JustViewResults)}>"View Results w/o Voting"</button>
                 </div>
             </div>
         }
