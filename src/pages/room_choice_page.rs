@@ -99,9 +99,7 @@ impl AppPage for RoomChoicePage {
 
                     <input type="submit" value="Join"/>
                 </form>
-                if let Some(error) = self.join_error_msg.as_ref() {
-                    <p>{error}</p>
-                }
+                <p>{self.join_error_msg.as_ref().map_or("", |s| &*s)}</p> // Doing this instead of the more intuitive `if let Some ...` approach as that causes a strange bug that turns things into <p> els on the next page
 
                 <h1>"Create Room"</h1>
                 <p>"Create a new room by entering the options below, each on its own line."</p>
