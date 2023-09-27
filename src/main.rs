@@ -51,7 +51,7 @@ async fn root(
             <!DOCTYPE html>
             <html>
                 <head>
-                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css"/>
+                    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css"/>
                     <style>
                         """body {
                             font-family: monospace,system-ui;
@@ -60,7 +60,6 @@ async fn root(
                     </style>
                 </head>
                 <body>
-                    <script src="https://dohliam.github.io/dropin-minimal-css/switcher.js" type="text/javascript"></script>
                     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
                     <script type="text/javascript">
                     {include_str!("../assets/main.js")}
