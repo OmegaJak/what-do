@@ -83,6 +83,7 @@ impl AppPage for RoomChoicePage {
         html! {
             <div>
                 <h1>"Join Room"</h1>
+                <p>"Join an existing room by entering its 4-letter code below."</p>
                 <form axm-submit={ AppMsg::RoomChoiceMsg(RoomChoiceMsg::JoinRoom) }>
                     <input
                         type="text"
@@ -100,8 +101,9 @@ impl AppPage for RoomChoicePage {
                 }
 
                 <h1>"Create Room"</h1>
+                <p>"Create a new room by entering the options below, each on its own line."</p>
                 <form axm-submit={ AppMsg::RoomChoiceMsg(RoomChoiceMsg::CreateRoom) }>
-                    <textarea name="options_text">
+                    <textarea name="options_text" rows="10">
                     </textarea>
                     <input type="submit" value="Create Room"/>
                 </form>

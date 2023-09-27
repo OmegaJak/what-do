@@ -77,6 +77,7 @@ impl AppPage for VetoPage {
             <div>
                 <h1>"It's veto time, baby!"</h1>
                 <h3>{format!("Room: {}", self.room_code)}</h3>
+                <p>"Any voter can veto any number of options. When the veto phase is finished, all voters proceed to the ranking phase together and can no longer veto."</p>
                 <h4>"Options"</h4>
                 <div>
                     <ol>
@@ -93,8 +94,8 @@ impl AppPage for VetoPage {
                     </ol>
 
                     // This button seemingly has to be beneath the options, otherwise, the options don't get rendered...
-                    <button axm-click={AppMsg::VetoMsg(VetoMsg::ResetAllVetos)}>"Reset all vetos"</button>
-
+                    <button style="font-size:0.75rem;" axm-click={AppMsg::VetoMsg(VetoMsg::ResetAllVetos)}>"Reset all vetos"</button>
+                    " "
                     <button axm-click={AppMsg::VetoMsg(VetoMsg::FinishVetoing)}>"Finish Vetoing"</button>
                 </div>
             </div>

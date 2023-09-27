@@ -87,6 +87,7 @@ fn parse_options(options_text: String) -> Vec<Option> {
     options_text
         .split(SPLIT_PATTERN)
         .unique()
+        .filter(|s| !s.is_empty())
         .map(|s| Option::new(s.to_string()))
         .collect()
 }

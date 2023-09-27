@@ -46,6 +46,7 @@ impl AppPage for ResultsPage {
             <div>
                 <h1>"Results"</h1>
                 <h3>{format!("Room: {}", self.room_code)}</h3>
+                <p>"A score is calculated for each option, weighted by the rankings it received from each voter."</p>
                 <h2>"Final Results"</h2>
                 <div>
                     <ol>
