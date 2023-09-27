@@ -88,6 +88,8 @@ impl AppPage for RoomChoicePage {
                         type="text"
                         name="room_code"
                         maxlength="4"
+                        spellcheck="false"
+                        autocorrect="off"
                         placeholder="Room Code"
                     />
 
