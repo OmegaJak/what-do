@@ -6,6 +6,8 @@ use std::sync::{Arc, RwLock};
 use tokio::sync::broadcast;
 use tower::ServiceBuilder;
 use tower_http::add_extension::AddExtensionLayer;
+use tracing::info;
+use tracing_panic::panic_hook;
 
 pub mod app;
 pub mod pages;
@@ -17,6 +19,8 @@ pub type ServerwideBroadcastSender = broadcast::Sender<BroadcastMsg>;
 
 #[shuttle_runtime::main]
 async fn axum() -> shuttle_axum::ShuttleAxum {
+    std::panic::set_hook(Box::new(panic_hook));
+    info!("Starting server!");
     let (tx, _) = broadcast::channel::<BroadcastMsg>(10);
 
     let app = Router::new()

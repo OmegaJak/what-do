@@ -1,6 +1,6 @@
 use super::{deserialize_form, ranking_page::RankingPage, AppPage};
 use crate::{app::AppMsg, room_state::RoomState, BroadcastMsg};
-use axum_live_view::{html, js_command::JsCommand};
+use axum_live_view::html;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 
