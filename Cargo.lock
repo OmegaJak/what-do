@@ -2513,7 +2513,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "14247bb57be4f377dfb94c72830b8ce8fc6beac03cf4bf7b9732eadd414123fc"
 
 [[package]]
-name = "what-to-do"
+name = "what-do"
 version = "0.1.0"
 dependencies = [
  "anyhow",

@@ -129,7 +129,7 @@ fn live_view_response(live: LiveViewUpgrade, app: App) -> impl IntoResponse {
                             " was created by "
                             <a href="https://github.com/OmegaJak">"Jackson Kruger"</a>
                             " to help friends avoid arguing for "<i>"far"</i>" too long deciding their next movie/game/whatever. | "
-                            <a href="https://github.com/OmegaJak/what-to-do">"Source"</a>
+                            <a href="https://github.com/OmegaJak/what-do">"Source"</a>
                         </p>
                     </footer>
                 </body>
