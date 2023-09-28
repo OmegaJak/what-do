@@ -2,7 +2,7 @@ setInterval(createSortable, 500);
 
 function createSortable() {
 	var sortableList = document.getElementById("sortableList");
-	if (sortableList && !Sortable.active) {
+	if (sortableList && !Sortable.get(sortableList)) {
 		Sortable.create(sortableList, {
 			animation: 100,
 			store: {
