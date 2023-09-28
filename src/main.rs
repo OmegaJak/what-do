@@ -96,21 +96,42 @@ fn live_view_response(live: LiveViewUpgrade, app: App) -> impl IntoResponse {
             <!DOCTYPE html>
             <html>
                 <head>
+                    <title>"what do?"</title>
                     <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css"/>
                     <style>
                         """body {
                             font-family: monospace,system-ui;
                         }
+                        body>header {
+                            padding: 0;
+                        }
+                        input[type=text] + input[type=submit] {
+                            margin-left: 0.5em;
+                        }
                         """
                     </style>
                 </head>
                 <body>
+                    <header>
+                        <h4 style="margin:0.2em;">"What Do? | "<a href="/">"Home"</a></h4>
+                    </header>
+
                     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
                     <script type="text/javascript">
                     {include_str!("../assets/main.js")}
                     </script>
                     { embed_live_view.embed(app) }
                     <script src="/assets/live-view.js"></script>
+
+                    <footer>
+                        <p style="margin:0.2em;">
+                            <i>"what do?"</i>
+                            " was created by "
+                            <a href="https://github.com/OmegaJak">"Jackson Kruger"</a>
+                            " to help friends avoid arguing for "<i>"far"</i>" too long deciding their next movie/game/whatever. | "
+                            <a href="https://github.com/OmegaJak/what-to-do">"Source"</a>
+                        </p>
+                    </footer>
                 </body>
             </html>
         }
