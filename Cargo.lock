@@ -2516,6 +2516,7 @@ checksum = "14247bb57be4f377dfb94c72830b8ce8fc6beac03cf4bf7b9732eadd414123fc"
 name = "what-to-do"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "axum",
  "axum-live-view",
  "itertools 0.11.0",

@@ -6,7 +6,7 @@ use axum_live_view::{html, js_command};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 
-use super::{deserialize_form, results_page::ResultsPage, AppPage};
+use super::{deserialize_form, results_page::ResultsPage, AppPage, AppUpdateResponse};
 
 pub struct RankingPage {
     pub room_code: String,
@@ -21,21 +21,16 @@ impl RankingPage {
         }
     }
 
-    fn get_results_page_response(
-        &mut self,
-    ) -> (
-        Option<Box<dyn AppPage + Send + Sync>>,
-        Option<Vec<axum_live_view::js_command::JsCommand>>,
-    ) {
-        (
-            Some(Box::new(ResultsPage {
+    fn get_results_page_response(&mut self) -> anyhow::Result<AppUpdateResponse> {
+        Ok(AppUpdateResponse {
+            next_page: Some(Box::new(ResultsPage {
                 room_code: self.room_code.clone(),
                 room_state: self.room_state.clone(),
             })),
-            Some(vec![js_command::history_push_state(
+            js_commands: Some(vec![js_command::history_push_state(
                 format!("/room/{}/results", self.room_code).parse().unwrap(),
             )]),
-        )
+        })
     }
 }
 
@@ -57,21 +52,17 @@ impl AppPage for RankingPage {
         data: Option<axum_live_view::event_data::EventData>,
         _server_shared_state: &mut ServerwideSharedState,
         broadcaster: &mut ServerwideBroadcastSender,
-    ) -> (
-        Option<Box<dyn AppPage + Send + Sync>>,
-        Option<Vec<axum_live_view::js_command::JsCommand>>,
-    ) {
+    ) -> anyhow::Result<AppUpdateResponse> {
         if let AppMsg::RankingMsg(msg) = msg {
             match msg {
                 RankingMsg::SubmitRanking => {
-                    let ranked_options = deserialize_form::<RankingFormSubmit>(data)
-                        .unwrap()
-                        .ranked_options;
+                    let ranked_options =
+                        deserialize_form::<RankingFormSubmit>(data)?.ranked_options;
                     self.room_state
                         .write()
                         .unwrap()
                         .contribute_votes(ranked_options);
-                    broadcaster.send(BroadcastMsg::UpdatedVotes).unwrap();
+                    broadcaster.send(BroadcastMsg::UpdatedVotes)?;
                     return self.get_results_page_response();
                 }
                 RankingMsg::JustViewResults => {
@@ -80,7 +71,7 @@ impl AppPage for RankingPage {
             }
         }
 
-        (None, None)
+        Ok((None, None).into())
     }
 
     fn render(&self) -> axum_live_view::Html<crate::app::AppMsg> {

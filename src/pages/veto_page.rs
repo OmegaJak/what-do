@@ -1,4 +1,4 @@
-use super::{deserialize_form, ranking_page::RankingPage, AppPage};
+use super::{deserialize_form, ranking_page::RankingPage, AppPage, AppUpdateResponse};
 use crate::{app::AppMsg, room_state::RoomState, BroadcastMsg};
 use axum_live_view::html;
 use serde::{Deserialize, Serialize};
@@ -46,46 +46,42 @@ impl AppPage for VetoPage {
         data: Option<axum_live_view::event_data::EventData>,
         _server_shared_state: &mut crate::ServerwideSharedState,
         broadcaster: &mut crate::ServerwideBroadcastSender,
-    ) -> (
-        Option<Box<dyn AppPage + Send + Sync>>,
-        Option<Vec<axum_live_view::js_command::JsCommand>>,
-    ) {
+    ) -> anyhow::Result<AppUpdateResponse> {
         if let AppMsg::VetoMsg(msg) = msg {
             match msg {
                 VetoMsg::VetoOption(option_to_veto) => {
                     self.room_state.write().unwrap().veto_all(&option_to_veto);
-                    broadcaster.send(BroadcastMsg::UpdatedVetos).unwrap();
+                    broadcaster.send(BroadcastMsg::UpdatedVetos)?;
                 }
                 VetoMsg::VetosUpdated => (),
                 VetoMsg::ResetAllVetos => {
                     self.room_state.write().unwrap().reset_all_vetos();
-                    broadcaster.send(BroadcastMsg::UpdatedVetos).unwrap();
+                    broadcaster.send(BroadcastMsg::UpdatedVetos)?;
                 }
                 VetoMsg::AddOption => {
-                    let option = deserialize_form::<AddOptionFormSubmit>(data)
-                        .unwrap()
-                        .option;
+                    let option = deserialize_form::<AddOptionFormSubmit>(data)?.option;
                     self.room_state.write().unwrap().add_option(option);
-                    broadcaster.send(BroadcastMsg::UpdatedVetos).unwrap();
-                    return (
+                    broadcaster.send(BroadcastMsg::UpdatedVetos)?;
+                    return Ok((
                         None,
                         Some(vec![axum_live_view::js_command::clear_value(
                             "#newOptionInput",
                         )]),
-                    );
+                    )
+                        .into());
                 }
                 VetoMsg::FinishVetoing => {
                     self.room_state.write().unwrap().finish_vetoing();
-                    broadcaster.send(BroadcastMsg::FinishedVetoing).unwrap();
-                    return (self.get_ranking_page(), None);
+                    broadcaster.send(BroadcastMsg::FinishedVetoing)?;
+                    return Ok((self.get_ranking_page(), None).into());
                 }
                 VetoMsg::OtherUserFinishedVetoing => {
-                    return (self.get_ranking_page(), None);
+                    return Ok((self.get_ranking_page(), None).into());
                 }
             }
         }
 
-        (None, None)
+        Ok((None, None).into())
     }
 
     fn render(&self) -> axum_live_view::Html<crate::app::AppMsg> {

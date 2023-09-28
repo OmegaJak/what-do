@@ -1,4 +1,4 @@
-use super::{deserialize_form, AppPage};
+use super::{deserialize_form, AppPage, AppUpdateResponse};
 use crate::{app::AppMsg, pages::veto_page::VetoPage};
 use axum::http::Uri;
 use axum_live_view::{html, js_command};
@@ -38,47 +38,44 @@ impl AppPage for RoomChoicePage {
         data: Option<axum_live_view::event_data::EventData>,
         server_shared_state: &mut crate::ServerwideSharedState,
         _broadcaster: &mut crate::ServerwideBroadcastSender,
-    ) -> (
-        Option<Box<dyn AppPage + Send + Sync>>,
-        Option<Vec<axum_live_view::js_command::JsCommand>>,
-    ) {
+    ) -> anyhow::Result<AppUpdateResponse> {
         if let AppMsg::RoomChoiceMsg(msg) = msg {
             match msg {
                 RoomChoiceMsg::JoinRoom => {
-                    let code = deserialize_form::<JoinRoomFormSubmit>(data)
-                        .unwrap()
+                    let code = deserialize_form::<JoinRoomFormSubmit>(data)?
                         .room_code
                         .to_ascii_lowercase();
 
                     let state = server_shared_state.read().unwrap();
                     match state.get_room_voting_page(&code) {
                         Ok(page) => {
-                            return (
+                            return Ok((
                                 Some(page),
                                 Some(vec![js_command::history_push_state(room_uri(&code))]),
                             )
+                                .into())
                         }
                         Err(msg) => self.join_error_msg = Some(msg),
                     }
                 }
                 RoomChoiceMsg::CreateRoom => {
-                    let options_text = deserialize_form::<CreateRoomFormSubmit>(data)
-                        .unwrap()
-                        .options_text;
+                    let options_text = deserialize_form::<CreateRoomFormSubmit>(data)?.options_text;
 
                     let mut state = server_shared_state.write().unwrap();
                     if let Ok((room_code, room)) = state.create_room(options_text) {
                         let cmd = js_command::history_push_state(room_uri(&room_code));
-                        return (
-                            Some(Box::new(VetoPage::new(room_code, room.clone()))),
+                        return Ok((
+                            Some(Box::new(VetoPage::new(room_code, room.clone()))
+                                as Box<dyn AppPage + Send + Sync>),
                             Some(vec![cmd]),
-                        );
+                        )
+                            .into());
                     }
                 }
             }
         }
 
-        (None, None)
+        Ok((None, None).into())
     }
 
     fn render(&self) -> axum_live_view::Html<AppMsg> {

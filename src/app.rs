@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     pages::{
-        ranking_page::RankingMsg, results_page::ResultsMsg, room_choice_page::RoomChoiceMsg,
-        veto_page::VetoMsg, AppPage,
+        error_page::ErrorPage, ranking_page::RankingMsg, results_page::ResultsMsg,
+        room_choice_page::RoomChoiceMsg, veto_page::VetoMsg, AppPage, AppUpdateResponse,
     },
     BroadcastMsg, ServerwideBroadcastSender, ServerwideSharedState,
 };
@@ -90,19 +90,30 @@ impl LiveView for App {
     }
 
     fn update(mut self, msg: AppMsg, data: Option<EventData>) -> Updated<Self> {
-        let (next_page, js_commands) =
-            self.current_page
-                .update(msg, data, &mut self.shared_state, &mut self.tx);
-        if let Some(page) = next_page {
-            self.current_page = page;
-        }
+        match self
+            .current_page
+            .update(msg, data, &mut self.shared_state, &mut self.tx)
+        {
+            Ok(AppUpdateResponse {
+                next_page,
+                js_commands,
+            }) => {
+                if let Some(page) = next_page {
+                    self.current_page = page;
+                }
 
-        let mut updated = Updated::new(self);
-        if let Some(commands) = js_commands {
-            updated = updated.with_all(commands);
-        }
+                let mut updated = Updated::new(self);
+                if let Some(commands) = js_commands {
+                    updated = updated.with_all(commands);
+                }
 
-        updated
+                updated
+            }
+            Err(e) => {
+                self.current_page = Box::new(ErrorPage::new(e));
+                Updated::new(self)
+            }
+        }
     }
 
     fn render(&self) -> Html<Self::Message> {
