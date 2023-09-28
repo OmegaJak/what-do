@@ -8,11 +8,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     pages::{
-        ranking_page::RankingMsg,
-        results_page::ResultsMsg,
-        room_choice_page::{RoomChoiceMsg, RoomChoicePage},
-        veto_page::VetoMsg,
-        AppPage,
+        ranking_page::RankingMsg, results_page::ResultsMsg, room_choice_page::RoomChoiceMsg,
+        veto_page::VetoMsg, AppPage,
     },
     BroadcastMsg, ServerwideBroadcastSender, ServerwideSharedState,
 };
@@ -39,11 +36,15 @@ pub struct FormSubmit {
 }
 
 impl App {
-    pub fn new(shared_state: ServerwideSharedState, tx: ServerwideBroadcastSender) -> Self {
+    pub fn new(
+        shared_state: ServerwideSharedState,
+        tx: ServerwideBroadcastSender,
+        page: Box<dyn AppPage + Sync + Send>,
+    ) -> Self {
         Self {
             shared_state,
             tx,
-            current_page: Box::new(RoomChoicePage::new()),
+            current_page: page,
         }
     }
 }

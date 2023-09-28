@@ -1,10 +1,10 @@
-use axum_live_view::html;
+use super::{deserialize_form, AppPage};
+use crate::{app::AppMsg, pages::veto_page::VetoPage};
+use axum::http::Uri;
+use axum_live_view::{html, js_command};
 use serde::{Deserialize, Serialize};
 
-use crate::{app::AppMsg, pages::veto_page::VetoPage, room_state::VotingStage};
-
-use super::{deserialize_form, ranking_page::RankingPage, AppPage};
-
+#[derive(Default)]
 pub struct RoomChoicePage {
     join_error_msg: Option<String>,
 }
@@ -26,10 +26,8 @@ pub struct CreateRoomFormSubmit {
 }
 
 impl RoomChoicePage {
-    pub fn new() -> Self {
-        Self {
-            join_error_msg: None,
-        }
+    pub fn new(join_error_msg: Option<String>) -> Self {
+        Self { join_error_msg }
     }
 }
 
@@ -53,17 +51,14 @@ impl AppPage for RoomChoicePage {
                         .to_ascii_lowercase();
 
                     let state = server_shared_state.read().unwrap();
-                    if let Some(room) = state.rooms.get(&code) {
-                        return match room.read().unwrap().voting_stage() {
-                            VotingStage::Vetoing => {
-                                (Some(Box::new(VetoPage::new(code, room.clone()))), None)
-                            }
-                            VotingStage::Ranking => {
-                                (Some(Box::new(RankingPage::new(code, room.clone()))), None)
-                            }
-                        };
-                    } else {
-                        self.join_error_msg = Some(format!("Room \"{}\" not found", code));
+                    match state.get_room_voting_page(&code) {
+                        Ok(page) => {
+                            return (
+                                Some(page),
+                                Some(vec![js_command::history_push_state(room_uri(&code))]),
+                            )
+                        }
+                        Err(msg) => self.join_error_msg = Some(msg),
                     }
                 }
                 RoomChoiceMsg::CreateRoom => {
@@ -73,7 +68,11 @@ impl AppPage for RoomChoicePage {
 
                     let mut state = server_shared_state.write().unwrap();
                     if let Ok((room_code, room)) = state.create_room(options_text) {
-                        return (Some(Box::new(VetoPage::new(room_code, room.clone()))), None);
+                        let cmd = js_command::history_push_state(room_uri(&room_code));
+                        return (
+                            Some(Box::new(VetoPage::new(room_code, room.clone()))),
+                            Some(vec![cmd]),
+                        );
                     }
                 }
             }
@@ -111,4 +110,8 @@ impl AppPage for RoomChoicePage {
             </div>
         }
     }
+}
+
+fn room_uri(room_code: &str) -> Uri {
+    format!("/room/{}", room_code).parse().unwrap()
 }

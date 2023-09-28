@@ -2,7 +2,7 @@ use crate::{
     app::AppMsg, room_state::RoomState, BroadcastMsg, ServerwideBroadcastSender,
     ServerwideSharedState,
 };
-use axum_live_view::html;
+use axum_live_view::{html, js_command};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 
@@ -21,11 +21,21 @@ impl RankingPage {
         }
     }
 
-    fn get_results_page(&mut self) -> Option<Box<dyn AppPage + Send + Sync>> {
-        Some(Box::new(ResultsPage {
-            room_code: self.room_code.clone(),
-            room_state: self.room_state.clone(),
-        }))
+    fn get_results_page_response(
+        &mut self,
+    ) -> (
+        Option<Box<dyn AppPage + Send + Sync>>,
+        Option<Vec<axum_live_view::js_command::JsCommand>>,
+    ) {
+        (
+            Some(Box::new(ResultsPage {
+                room_code: self.room_code.clone(),
+                room_state: self.room_state.clone(),
+            })),
+            Some(vec![js_command::history_push_state(
+                format!("/room/{}/results", self.room_code).parse().unwrap(),
+            )]),
+        )
     }
 }
 
@@ -62,10 +72,10 @@ impl AppPage for RankingPage {
                         .unwrap()
                         .contribute_votes(ranked_options);
                     broadcaster.send(BroadcastMsg::UpdatedVotes).unwrap();
-                    return (self.get_results_page(), None);
+                    return self.get_results_page_response();
                 }
                 RankingMsg::JustViewResults => {
-                    return (self.get_results_page(), None);
+                    return self.get_results_page_response();
                 }
             }
         }

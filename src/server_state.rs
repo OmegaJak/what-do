@@ -1,4 +1,7 @@
-use crate::room_state::RoomState;
+use crate::{
+    pages::{ranking_page::RankingPage, results_page::ResultsPage, veto_page::VetoPage, AppPage},
+    room_state::{RoomState, VotingStage},
+};
 use std::{
     collections::HashMap,
     sync::{Arc, RwLock},
@@ -23,6 +26,39 @@ impl ServerState {
                 Arc::new(RwLock::new(RoomState::new(room_code, original_input_text)))
             }),
         ))
+    }
+
+    pub fn get_room_voting_page(
+        &self,
+        room_code: &str,
+    ) -> Result<Box<dyn AppPage + Send + Sync>, String> {
+        if let Some(room) = self.rooms.get(room_code) {
+            match room.read().unwrap().voting_stage() {
+                VotingStage::Vetoing => {
+                    Ok(Box::new(VetoPage::new(room_code.to_string(), room.clone())))
+                }
+                VotingStage::Ranking => Ok(Box::new(RankingPage::new(
+                    room_code.to_string(),
+                    room.clone(),
+                ))),
+            }
+        } else {
+            Err(format!("Room \"{}\" not found", room_code))
+        }
+    }
+
+    pub fn get_room_results_page(
+        &self,
+        room_code: &str,
+    ) -> Result<Box<dyn AppPage + Send + Sync>, String> {
+        if let Some(room) = self.rooms.get(room_code) {
+            Ok(Box::new(ResultsPage {
+                room_code: room_code.to_string(),
+                room_state: room.clone(),
+            }))
+        } else {
+            Err(format!("Room \"{}\" not found", room_code))
+        }
     }
 
     fn get_valid_room_code(&self) -> Result<String, ()> {
