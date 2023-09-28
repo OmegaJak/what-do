@@ -7,4 +7,4 @@ run:
 	cargo shuttle run
 
 deploy *ARGS:
-	cargo shuttle deploy {{ARGS}}
+	cargo shuttle deploy --name whatdo {{ARGS}}
