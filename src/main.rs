@@ -113,7 +113,7 @@ fn live_view_response(live: LiveViewUpgrade, app: App) -> impl IntoResponse {
                 </head>
                 <body>
                     <header>
-                        <h4 style="margin:0.2em;">"What Do? | "<a href="/">"Home"</a></h4>
+                        <h4 style="margin:0.2em;">"what do? | "<a href="/">"Home"</a></h4>
                     </header>
 
                     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
