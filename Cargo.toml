@@ -10,7 +10,7 @@ shuttle-axum = "0.27.0"
 shuttle-runtime = "0.27.0"
 tokio = "1.28.2"
 # axum-live-view = { git = "https://github.com/davidpdrsn/axum-live-view", features = ["precompiled-js"] }
-axum-live-view = { git = "https://github.com/OmegaJak/axum-live-view", branch = "FixUnreachablePanicOnForLoopDynamicChange", features = ["precompiled-js"] }
+axum-live-view = { git = "https://github.com/OmegaJak/axum-live-view", branch = "FixUnreachablePanicOnForLoopDynamicChange", features = ["precompiled-js"] } # https://github.com/davidpdrsn/axum-live-view/pull/162
 # axum-live-view = { path = "../axum-live-view/axum-live-view", features = ["precompiled-js"] }
 serde = { version = "1.0", features = ["derive"] }
 tower = { version = "0.4" }
