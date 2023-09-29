@@ -85,7 +85,7 @@ impl AppPage for RankingPage {
                 <div>
                     <ol id="sortableList">
                         for option in room_state.options.iter().filter(|o| !o.vetoed) {
-                            <li>{option.text.clone()}</li> // Can't use data-id here how SortableJS wants you too, doing so produces "unreachable!("unable to find a way to hit this yolo")" in diff.rs
+                            <li style="cursor:move;">{option.text.clone()}</li> // Can't use data-id here how SortableJS wants you too, doing so produces "unreachable!("unable to find a way to hit this yolo")" in diff.rs
                         }
                     </ol>
 
