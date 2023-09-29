@@ -4,11 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+ammonia = "3.3.0"
 axum = "0.6.18"
 shuttle-axum = "0.27.0"
 shuttle-runtime = "0.27.0"
 tokio = "1.28.2"
-axum-live-view = { git = "https://github.com/davidpdrsn/axum-live-view", features = ["precompiled-js"] }
+# axum-live-view = { git = "https://github.com/davidpdrsn/axum-live-view", features = ["precompiled-js"] }
+axum-live-view = { git = "https://github.com/OmegaJak/axum-live-view", branch = "FixUnreachablePanicOnForLoopDynamicChange", features = ["precompiled-js"] }
+# axum-live-view = { path = "../axum-live-view/axum-live-view", features = ["precompiled-js"] }
 serde = { version = "1.0", features = ["derive"] }
 tower = { version = "0.4" }
 tower-http = { version = "0.2.0", features = ["add-extension"] }
@@ -18,3 +21,5 @@ ordinal = "0.3.2"
 tracing = "0.1.37"
 tracing-panic = "0.1.1"
 anyhow = "1.0.75"
+uuid = "1.4.1"
+linked-hash-map = "0.5.6"

@@ -3,11 +3,11 @@ use itertools::Itertools;
 use ordinal::Ordinal;
 use serde::{Deserialize, Serialize};
 
-use crate::{app::AppMsg, room_state::RoomState};
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
+use crate::{
+    app::AppMsg,
+    room_state::{FinalVoteTally, RoomState},
 };
+use std::sync::{Arc, RwLock};
 
 use super::{AppPage, AppUpdateResponse};
 
@@ -40,8 +40,8 @@ impl AppPage for ResultsPage {
 
     fn render(&self) -> axum_live_view::Html<crate::app::AppMsg> {
         let room_state = self.room_state.read().unwrap();
-        let scores = calculate_scores(&room_state.votes);
-        let highest_score = scores.first().map_or(0, |(_, score, _)| *score);
+        let tallies = room_state.tally_votes();
+        let highest_score = tallies.first().map_or(0, |t| t.score);
         html! {
             <div>
                 <h1>"Results"</h1>
@@ -50,11 +50,11 @@ impl AppPage for ResultsPage {
                 <h2>"Final Results"</h2>
                 <div>
                     <ol>
-                        for (option, score, ranks) in scores.iter() {
-                            if *score == highest_score {
-                                <h3><li>{get_summary_text(option, *score, ranks)}</li></h3>
+                        for tally in tallies.iter() {
+                            if tally.score == highest_score {
+                                <h3><li>{get_summary_text(&tally)}</li></h3>
                             } else {
-                                <li>{get_summary_text(option, *score, ranks)}</li>
+                                <li>{get_summary_text(&tally)}</li>
                             }
                         }
                     </ol>
@@ -62,10 +62,10 @@ impl AppPage for ResultsPage {
                 <h4>"All Votes"</h4>
                 <div>
                     <ul>
-                        for vote in room_state.votes.iter() {
+                        for votes in room_state.iter_html_displayable_votes() {
                             <li>
                                 <ol>
-                                    for option in vote.iter() {
+                                    for option in votes {
                                         <li>{option}</li>
                                     }
                                 </ol>
@@ -79,36 +79,15 @@ impl AppPage for ResultsPage {
     }
 }
 
-fn get_summary_text(option: &str, score: usize, ranks: &[usize]) -> String {
-    format!("{} ({}) - {}", option, get_ranks_text(ranks), score)
+fn get_summary_text(tally: &FinalVoteTally) -> String {
+    format!(
+        "{} ({}) - {}",
+        tally.html_displayable_text,
+        get_ranks_text(&tally.ranks),
+        tally.score
+    )
 }
 
 fn get_ranks_text(ranks: &[usize]) -> String {
     ranks.iter().map(|r| Ordinal(*r).to_string()).join(", ")
-}
-
-fn calculate_scores(votes: &[Vec<String>]) -> Vec<(String, usize, Vec<usize>)> {
-    let longest = votes.iter().map(|v| v.len()).max().unwrap_or(0);
-    let mut scores: HashMap<String, (usize, Vec<usize>)> = HashMap::new();
-    for vote in votes {
-        for (index, option) in vote.iter().enumerate() {
-            let score = longest.checked_sub(index).unwrap();
-            let rank = index + 1;
-            scores
-                .entry(option.clone())
-                .and_modify(|(total, ranks)| {
-                    *total = *total + score;
-                    ranks.push(rank);
-                })
-                .or_insert((score, vec![rank]));
-        }
-    }
-
-    scores
-        .into_iter()
-        .sorted_by_key(|(option, _)| option.clone())
-        .sorted_by_key(|(_, (score, _))| *score)
-        .rev()
-        .map(|(option, (score, ranks))| (option, score, ranks.into_iter().sorted().collect()))
-        .collect()
 }

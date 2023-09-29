@@ -84,8 +84,8 @@ impl AppPage for RankingPage {
                 <button style="font-size:0.75rem;" axm-click={AppMsg::RankingMsg(RankingMsg::JustViewResults)}>"View Results w/o Voting"</button>
                 <div>
                     <ol id="sortableList">
-                        for option in room_state.options.iter().filter(|o| !o.vetoed) {
-                            <li style="cursor:move;">{option.text.clone()}</li> // Can't use data-id here how SortableJS wants you too, doing so produces "unreachable!("unable to find a way to hit this yolo")" in diff.rs
+                        for option in room_state.iter_options().filter(|o| !o.vetoed) {
+                            <li style="cursor:move;" option-id={option.id.as_simple().to_string()}>{option.get_html_text()}</li> // Can't use data-id here how SortableJS wants you too, doing so produces "unreachable!("unable to find a way to hit this yolo")" in diff.rs
                         }
                     </ol>
 

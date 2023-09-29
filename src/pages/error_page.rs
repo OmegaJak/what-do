@@ -26,7 +26,7 @@ impl AppPage for ErrorPage {
     fn render(&self) -> axum_live_view::Html<crate::app::AppMsg> {
         html! {
             <div>
-                <p>{format!("Encountered an error: {}", self.error)}</p>
+                <p>{ammonia::clean_text(&format!("Encountered an error: {}", self.error))}</p>
             </div>
         }
     }

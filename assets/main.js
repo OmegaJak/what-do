@@ -12,7 +12,10 @@ function createSortable() {
 					if (sortableList && sortingOutput) {
 						var arr = [];
 						for (var child of sortableList.children) {
-							arr.push(child.innerHTML);
+							var id = child.getAttribute("option-id");
+							if (id) {
+								arr.push(id);
+							}
 						}
 
 						sortingOutput.value = arr.join('\n');

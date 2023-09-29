@@ -3,6 +3,8 @@ use crate::{app::AppMsg, room_state::RoomState, BroadcastMsg};
 use axum_live_view::html;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
+use tracing::warn;
+use uuid::Uuid;
 
 pub struct VetoPage {
     pub room_code: String,
@@ -49,9 +51,13 @@ impl AppPage for VetoPage {
     ) -> anyhow::Result<AppUpdateResponse> {
         if let AppMsg::VetoMsg(msg) = msg {
             match msg {
-                VetoMsg::VetoOption(option_to_veto) => {
-                    self.room_state.write().unwrap().veto_all(&option_to_veto);
-                    broadcaster.send(BroadcastMsg::UpdatedVetos)?;
+                VetoMsg::VetoOption(id_to_veto) => {
+                    if let Ok(uuid) = Uuid::parse_str(&id_to_veto) {
+                        self.room_state.write().unwrap().veto(uuid);
+                        broadcaster.send(BroadcastMsg::UpdatedVetos)?;
+                    } else {
+                        warn!("Received invalid uuid to veto: {}", id_to_veto);
+                    }
                 }
                 VetoMsg::VetosUpdated => (),
                 VetoMsg::ResetAllVetos => {
@@ -97,13 +103,13 @@ impl AppPage for VetoPage {
                 <h4>"Options"</h4>
                 <div>
                     <ol>
-                        for option in room_state.options.iter() {
+                        for option in room_state.iter_options() {
                             <li>
                                 if option.vetoed {
                                     // Re-enabling by resetting vetoes doesn't allow re-vetoing unless I include the axm-click here, even though it's not necessary (since the button's disabled)
-                                    <s>{option.text.clone()}</s>{BUTTON_SPACE}<button style={BUTTON_STYLE} disabled axm-click={ AppMsg::VetoMsg(VetoMsg::VetoOption(option.text.clone())) }>{BUTTON_TEXT}</button>
+                                    <s>{option.get_html_text()}</s>{BUTTON_SPACE}<button style={BUTTON_STYLE} disabled axm-click={ AppMsg::VetoMsg(VetoMsg::VetoOption(option.id.as_simple().to_string())) }>{BUTTON_TEXT}</button>
                                 } else {
-                                    {option.text.clone()}{BUTTON_SPACE}<button style={BUTTON_STYLE} axm-click={ AppMsg::VetoMsg(VetoMsg::VetoOption(option.text.clone())) }>{BUTTON_TEXT}</button>
+                                    {option.get_html_text()}{BUTTON_SPACE}<button style={BUTTON_STYLE} axm-click={ AppMsg::VetoMsg(VetoMsg::VetoOption(option.id.as_simple().to_string())) }>{BUTTON_TEXT}</button>
                                 }
                             </li>
                         }
