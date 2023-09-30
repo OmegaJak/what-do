@@ -1,4 +1,4 @@
-use crate::{app::AppMsg, ServerwideBroadcastSender, ServerwideSharedState};
+use crate::{app::AppMsg, ServerwideSharedState};
 use anyhow::anyhow;
 use anyhow::Result;
 use axum_live_view::{event_data::EventData, Html};
@@ -15,7 +15,7 @@ pub trait AppPage {
         msg: AppMsg,
         data: Option<EventData>,
         server_shared_state: &mut ServerwideSharedState,
-        broadcaster: &mut ServerwideBroadcastSender,
+        broadcast_rx_tx: &mut crate::BroadcastReceiverSender,
     ) -> Result<AppUpdateResponse>;
     fn render(&self) -> Html<AppMsg>;
 }

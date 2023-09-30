@@ -4,6 +4,8 @@ use itertools::Itertools;
 use linked_hash_map::LinkedHashMap;
 use uuid::Uuid;
 
+use crate::BroadcastSender;
+
 const SPLIT_PATTERN: &str = "\n";
 const INVALID_VOTE_TEXT: &str = "INVALID VOTE";
 
@@ -12,6 +14,7 @@ pub struct RoomState {
     options: LinkedHashMap<Uuid, Option>,
     voting_stage: VotingStage,
     votes: Vec<Vec<Uuid>>,
+    broadcast_tx: BroadcastSender,
 }
 
 pub struct Option {
@@ -63,14 +66,19 @@ impl From<VoteTally> for FinalVoteTally {
 }
 
 impl RoomState {
-    pub fn new(code: String, original_input_text: String) -> Self {
+    pub fn new(code: String, original_input_text: String, broadcast_tx: BroadcastSender) -> Self {
         let options = parse_options(original_input_text);
         Self {
             code,
             options,
             voting_stage: VotingStage::Vetoing,
             votes: Vec::new(),
+            broadcast_tx,
         }
+    }
+
+    pub fn get_broadcast_tx(&self) -> BroadcastSender {
+        self.broadcast_tx.clone()
     }
 
     pub fn add_option(&mut self, option: String) {

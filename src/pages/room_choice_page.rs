@@ -37,7 +37,7 @@ impl AppPage for RoomChoicePage {
         msg: AppMsg,
         data: Option<axum_live_view::event_data::EventData>,
         server_shared_state: &mut crate::ServerwideSharedState,
-        _broadcaster: &mut crate::ServerwideBroadcastSender,
+        broadcast_rx_tx: &mut crate::BroadcastReceiverSender,
     ) -> anyhow::Result<AppUpdateResponse> {
         if let AppMsg::RoomChoiceMsg(msg) = msg {
             match msg {
@@ -48,12 +48,13 @@ impl AppPage for RoomChoicePage {
 
                     let state = server_shared_state.read().unwrap();
                     match state.get_room_voting_page(&code) {
-                        Ok(page) => {
+                        Ok((page, broadcast_rx)) => {
+                            broadcast_rx_tx.send(broadcast_rx)?;
                             return Ok((
                                 Some(page),
                                 Some(vec![js_command::history_push_state(room_uri(&code))]),
                             )
-                                .into())
+                                .into());
                         }
                         Err(msg) => self.join_error_msg = Some(msg),
                     }
@@ -62,10 +63,17 @@ impl AppPage for RoomChoicePage {
                     let options_text = deserialize_form::<CreateRoomFormSubmit>(data)?.options_text;
 
                     let mut state = server_shared_state.write().unwrap();
-                    if let Ok((room_code, room)) = state.create_room(options_text) {
+                    if let Ok((room_code, room, broadcast_tx, broadcast_rx)) =
+                        state.create_room(options_text)
+                    {
                         let cmd = js_command::history_push_state(room_uri(&room_code));
+                        broadcast_rx_tx.send(broadcast_rx)?;
                         return Ok((
-                            Some(Box::new(VetoPage::new(room_code, room.clone()))
+                            Some(Box::new(VetoPage::new(
+                                room_code,
+                                room.clone(),
+                                broadcast_tx.clone(),
+                            ))
                                 as Box<dyn AppPage + Send + Sync>),
                             Some(vec![cmd]),
                         )

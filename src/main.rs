@@ -16,13 +16,14 @@ pub mod room_state;
 pub mod server_state;
 
 pub type ServerwideSharedState = Arc<RwLock<ServerState>>;
-pub type ServerwideBroadcastSender = broadcast::Sender<BroadcastMsg>;
+pub type BroadcastSender = broadcast::Sender<BroadcastMsg>;
+pub type BroadcastReceiver = broadcast::Receiver<BroadcastMsg>;
+pub type BroadcastReceiverSender = std::sync::mpsc::Sender<broadcast::Receiver<BroadcastMsg>>;
 
 #[shuttle_runtime::main]
 async fn axum() -> shuttle_axum::ShuttleAxum {
     std::panic::set_hook(Box::new(panic_hook));
     info!("Starting server!");
-    let (tx, _) = broadcast::channel::<BroadcastMsg>(10);
 
     let app = Router::new()
         .route("/", get(root))
@@ -32,7 +33,6 @@ async fn axum() -> shuttle_axum::ShuttleAxum {
         .layer(
             ServiceBuilder::new()
                 .layer(AddExtensionLayer::new(ServerwideSharedState::default()))
-                .layer(AddExtensionLayer::new(tx))
                 .into_inner(),
         );
 
@@ -49,9 +49,8 @@ pub enum BroadcastMsg {
 async fn root(
     live: LiveViewUpgrade,
     Extension(state): Extension<ServerwideSharedState>,
-    Extension(tx): Extension<ServerwideBroadcastSender>,
 ) -> impl IntoResponse {
-    let app = App::new(state, tx, Box::new(RoomChoicePage::default()));
+    let app = App::new(state, Box::new(RoomChoicePage::default()), None);
     live_view_response(live, app)
 }
 
@@ -59,11 +58,10 @@ async fn room(
     Path(room_code): Path<String>,
     live: LiveViewUpgrade,
     Extension(state): Extension<ServerwideSharedState>,
-    Extension(tx): Extension<ServerwideBroadcastSender>,
 ) -> impl IntoResponse {
     live_view_response(
         live,
-        get_app_starting_on_room_page(room_code, state, tx, ServerState::get_room_voting_page),
+        get_app_starting_on_room_page(room_code, state, ServerState::get_room_voting_page),
     )
 }
 
@@ -71,23 +69,26 @@ async fn room_results(
     Path(room_code): Path<String>,
     live: LiveViewUpgrade,
     Extension(state): Extension<ServerwideSharedState>,
-    Extension(tx): Extension<ServerwideBroadcastSender>,
 ) -> impl IntoResponse {
     live_view_response(
         live,
-        get_app_starting_on_room_page(room_code, state, tx, ServerState::get_room_results_page),
+        get_app_starting_on_room_page(room_code, state, ServerState::get_room_results_page),
     )
 }
 
 fn get_app_starting_on_room_page(
     room_code: String,
     state: ServerwideSharedState,
-    tx: ServerwideBroadcastSender,
-    get_room_page: impl FnOnce(&ServerState, &str) -> Result<Box<dyn AppPage + Send + Sync>, String>,
+    get_room_page: impl FnOnce(
+        &ServerState,
+        &str,
+    )
+        -> Result<(Box<dyn AppPage + Send + Sync>, BroadcastReceiver), String>,
 ) -> App {
-    let starting_page = get_room_page(&state.read().unwrap(), &room_code)
-        .unwrap_or_else(|e| Box::new(RoomChoicePage::new(Some(e))));
-    App::new(state, tx, starting_page)
+    let (starting_page, broadcast_rx) = get_room_page(&state.read().unwrap(), &room_code)
+        .map(|(page, rx)| (page, Some(rx)))
+        .unwrap_or_else(|e| (Box::new(RoomChoicePage::new(Some(e))), None));
+    App::new(state, starting_page, broadcast_rx)
 }
 
 fn live_view_response(live: LiveViewUpgrade, app: App) -> impl IntoResponse {

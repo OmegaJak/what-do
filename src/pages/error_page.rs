@@ -18,7 +18,7 @@ impl AppPage for ErrorPage {
         _msg: crate::app::AppMsg,
         _data: Option<axum_live_view::event_data::EventData>,
         _server_shared_state: &mut crate::ServerwideSharedState,
-        _broadcaster: &mut crate::ServerwideBroadcastSender,
+        _broadcast_rx_tx: &mut crate::BroadcastReceiverSender,
     ) -> anyhow::Result<super::AppUpdateResponse> {
         Ok((None, None).into())
     }

@@ -1,6 +1,5 @@
 use crate::{
-    app::AppMsg, room_state::RoomState, BroadcastMsg, ServerwideBroadcastSender,
-    ServerwideSharedState,
+    app::AppMsg, room_state::RoomState, BroadcastMsg, BroadcastSender, ServerwideSharedState,
 };
 use axum_live_view::{html, js_command};
 use serde::{Deserialize, Serialize};
@@ -11,13 +10,19 @@ use super::{deserialize_form, results_page::ResultsPage, AppPage, AppUpdateRespo
 pub struct RankingPage {
     pub room_code: String,
     pub room_state: Arc<RwLock<RoomState>>,
+    pub broadcast_tx: BroadcastSender,
 }
 
 impl RankingPage {
-    pub fn new(room_code: String, room_state: Arc<RwLock<RoomState>>) -> Self {
+    pub fn new(
+        room_code: String,
+        room_state: Arc<RwLock<RoomState>>,
+        broadcast_tx: BroadcastSender,
+    ) -> Self {
         Self {
             room_code,
             room_state,
+            broadcast_tx,
         }
     }
 
@@ -51,7 +56,7 @@ impl AppPage for RankingPage {
         msg: AppMsg,
         data: Option<axum_live_view::event_data::EventData>,
         _server_shared_state: &mut ServerwideSharedState,
-        broadcaster: &mut ServerwideBroadcastSender,
+        _broadcast_rx_tx: &mut crate::BroadcastReceiverSender,
     ) -> anyhow::Result<AppUpdateResponse> {
         if let AppMsg::RankingMsg(msg) = msg {
             match msg {
@@ -62,7 +67,7 @@ impl AppPage for RankingPage {
                         .write()
                         .unwrap()
                         .contribute_votes(ranked_options);
-                    broadcaster.send(BroadcastMsg::UpdatedVotes)?;
+                    self.broadcast_tx.send(BroadcastMsg::UpdatedVotes)?;
                     return self.get_results_page_response();
                 }
                 RankingMsg::JustViewResults => {

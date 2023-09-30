@@ -1,5 +1,5 @@
 use super::{deserialize_form, ranking_page::RankingPage, AppPage, AppUpdateResponse};
-use crate::{app::AppMsg, room_state::RoomState, BroadcastMsg};
+use crate::{app::AppMsg, room_state::RoomState, BroadcastMsg, BroadcastSender};
 use axum_live_view::html;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
@@ -9,12 +9,18 @@ use uuid::Uuid;
 pub struct VetoPage {
     pub room_code: String,
     pub room_state: Arc<RwLock<RoomState>>,
+    broadcast_tx: BroadcastSender,
 }
 impl VetoPage {
-    pub fn new(room_code: String, room_state: Arc<RwLock<RoomState>>) -> Self {
+    pub fn new(
+        room_code: String,
+        room_state: Arc<RwLock<RoomState>>,
+        broadcast_tx: BroadcastSender,
+    ) -> Self {
         Self {
             room_code,
             room_state,
+            broadcast_tx,
         }
     }
 
@@ -22,6 +28,7 @@ impl VetoPage {
         Some(Box::new(RankingPage::new(
             self.room_code.clone(),
             self.room_state.clone(),
+            self.broadcast_tx.clone(),
         )))
     }
 }
@@ -47,14 +54,14 @@ impl AppPage for VetoPage {
         msg: crate::app::AppMsg,
         data: Option<axum_live_view::event_data::EventData>,
         _server_shared_state: &mut crate::ServerwideSharedState,
-        broadcaster: &mut crate::ServerwideBroadcastSender,
+        _broadcast_rx_tx: &mut crate::BroadcastReceiverSender,
     ) -> anyhow::Result<AppUpdateResponse> {
         if let AppMsg::VetoMsg(msg) = msg {
             match msg {
                 VetoMsg::VetoOption(id_to_veto) => {
                     if let Ok(uuid) = Uuid::parse_str(&id_to_veto) {
                         self.room_state.write().unwrap().veto(uuid);
-                        broadcaster.send(BroadcastMsg::UpdatedVetos)?;
+                        self.broadcast_tx.send(BroadcastMsg::UpdatedVetos)?;
                     } else {
                         warn!("Received invalid uuid to veto: {}", id_to_veto);
                     }
@@ -62,12 +69,12 @@ impl AppPage for VetoPage {
                 VetoMsg::VetosUpdated => (),
                 VetoMsg::ResetAllVetos => {
                     self.room_state.write().unwrap().reset_all_vetos();
-                    broadcaster.send(BroadcastMsg::UpdatedVetos)?;
+                    self.broadcast_tx.send(BroadcastMsg::UpdatedVetos)?;
                 }
                 VetoMsg::AddOption => {
                     let option = deserialize_form::<AddOptionFormSubmit>(data)?.option;
                     self.room_state.write().unwrap().add_option(option);
-                    broadcaster.send(BroadcastMsg::UpdatedVetos)?;
+                    self.broadcast_tx.send(BroadcastMsg::UpdatedVetos)?;
                     return Ok((
                         None,
                         Some(vec![axum_live_view::js_command::clear_value(
@@ -78,7 +85,7 @@ impl AppPage for VetoPage {
                 }
                 VetoMsg::FinishVetoing => {
                     self.room_state.write().unwrap().finish_vetoing();
-                    broadcaster.send(BroadcastMsg::FinishedVetoing)?;
+                    self.broadcast_tx.send(BroadcastMsg::FinishedVetoing)?;
                     return Ok((self.get_ranking_page(), None).into());
                 }
                 VetoMsg::OtherUserFinishedVetoing => {
