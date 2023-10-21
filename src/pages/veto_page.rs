@@ -72,16 +72,19 @@ impl AppPage for VetoPage {
                     self.broadcast_tx.send(BroadcastMsg::UpdatedVetos)?;
                 }
                 VetoMsg::AddOption => {
-                    let option = deserialize_form::<AddOptionFormSubmit>(data)?.option;
-                    self.room_state.write().unwrap().add_option(option);
-                    self.broadcast_tx.send(BroadcastMsg::UpdatedVetos)?;
-                    return Ok((
-                        None,
-                        Some(vec![axum_live_view::js_command::clear_value(
-                            "#newOptionInput",
-                        )]),
-                    )
-                        .into());
+                    let mut option = deserialize_form::<AddOptionFormSubmit>(data)?.option;
+                    option = option.trim().to_string();
+                    if !option.is_empty() {
+                        self.room_state.write().unwrap().add_option(option);
+                        self.broadcast_tx.send(BroadcastMsg::UpdatedVetos)?;
+                        return Ok((
+                            None,
+                            Some(vec![axum_live_view::js_command::clear_value(
+                                "#newOptionInput",
+                            )]),
+                        )
+                            .into());
+                    }
                 }
                 VetoMsg::FinishVetoing => {
                     self.room_state.write().unwrap().finish_vetoing();

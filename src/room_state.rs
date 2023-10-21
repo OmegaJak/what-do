@@ -189,6 +189,7 @@ fn parse_options(options_text: String) -> LinkedHashMap<Uuid, Option> {
     options_text
         .split(SPLIT_PATTERN)
         .unique()
+        .map(|s| s.trim().to_string())
         .filter(|s| valid_option(s))
         .map(|s| Option::new(s.to_string()))
         .map(|o| (o.id, o))
